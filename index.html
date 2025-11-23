@@ -63,9 +63,9 @@
 
 <body>
     <h3 style="margin-bottom: 10px;">قم بمسح الـQR Code بالكاميرا</h3>
-    <div style="display: flex; justify-content: center;">
-        <h6 style="margin: 10px 5px;">اختر الكاميرا:</h6>
-        <select id="cameraSelect" style="margin-bottom: 10px;"></select> <!-- Dropdown for camera selection -->
+    <!-- تم إخفاء قائمة اختيار الكاميرا للاعتماد على الكاميرا الخلفية فقط -->
+    <div style="display: none;">
+        <select id="cameraSelect"></select>
     </div>
     <video id="scanner" style="height: 380px; object-fit: cover;"></video>
 
@@ -80,13 +80,9 @@
         // استيراد مكتبة QrScanner من ملف خارجي لتشغيل وظائف مسح الـ QR
 
         import QrScanner from "./js/qr-scanner.min.js";
-        // const sourcePage = sessionStorage.getItem("sourcePage") || "http://a.com";
-        // console.log(sourcePage);
         // الحصول على الرابط الأساسي (IP) من عنوان الصفحة الحالية، والذي سيتم استخدامه لإعادة التوجيه
         // مثال: إذا كان الرابط هو index.html?tthh=192.168.1.1، سيتم تخزين 192.168.1.1
         var sourcePage = new URLSearchParams(window.location.search).get("tthh");
-
-
 
         // في حال لم يتم توفير الرابط الأساسي في عنوان الصفحة، يتم استخدام رابط افتراضي
         if (sourcePage) {
@@ -94,7 +90,6 @@
         } else {
             sourcePage = "http://a.com";
         }
-        // console.log(sourcePage);
         // ربط المتغيرات مع عناصر HTML في الصفحة
         const video = document.getElementById('scanner');
         const resultContainer = document.getElementById('result-container');
@@ -147,38 +142,30 @@
         // --- دالة رئيسية لتشغيل الماسح والكاميرا بالترتيب الصحيح ---
         async function startScanner() {
             try {
-                // 1. جلب قائمة الكاميرات
-                const cameras = await QrScanner.listCameras(true);
-                if (cameras.length === 0) {
-                    alert('لم يتم العثور على كاميرا.');
-                    return;
+                // 1. جلب قائمة الكاميرات الخلفية فقط
+                const allCameras = await QrScanner.listCameras(true);
+                const backCameras = allCameras.filter(c => c.label.toLowerCase().includes('back'));
+
+                if (backCameras.length === 0) {
+                    if (allCameras.length > 0) {
+                        // إذا لم توجد كاميرا خلفية، استخدم أول كاميرا متاحة كخيار احتياطي
+                        await qrScanner.setCamera(allCameras[0].id);
+                    } else {
+                        alert('لم يتم العثور على أي كاميرا.');
+                        return;
+                    }
+                } else {
+                    // 2. الاعتماد على الكاميرا الخلفية
+                    await qrScanner.setCamera(backCameras[0].id);
                 }
 
-                // 2. ملء القائمة المنسدلة وتحديد الكاميرا الخلفية
-                cameras.forEach(camera => {
-                    const option = document.createElement('option');
-                    option.value = camera.id;
-                    option.text = camera.label;
-                    cameraSelect.add(option);
-                });
-
-                const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
-                if (backCamera) {
-                    cameraSelect.value = backCamera.id;
-                    await qrScanner.setCamera(backCamera.id);
-                }
-
-                // 3. إضافة مستمع لتغيير الكاميرا
-                cameraSelect.addEventListener('change', event => {
-                    qrScanner.setCamera(event.target.value);
-                });
-
-                // 4. بدء تشغيل الماسح الضوئي **بعد** تجهيز الكاميرا
+                // 3. بدء تشغيل الماسح الضوئي **بعد** تجهيز الكاميرا
                 await qrScanner.start();
+                console.log('الماسح الضوئي بدأ بنجاح.');
 
             } catch (error) {
-                console.error(error);
-                alert('حدث خطأ أثناء تشغيل الكاميرا. يرجى التأكد من منح الإذن والمحاولة مرة أخرى.');
+                console.error('فشل بدء تشغيل الماسح:', error);
+                alert('حدث خطأ أثناء تشغيل الكاميرا. يرجى التأكد من منح الإذن وتحديث الصفحة.');
             }
         }
 
