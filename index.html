@@ -20,12 +20,38 @@
             border-radius: 10px;
         }
 
-        #result2 {
-            font-size: 14px;
-            font-weight: bold;
-            color: #000;
-            display: block;
-            margin-top: 10px;
+        #result-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            display: none; /* إخفاء الحاوية بشكل افتراضي */
+        }
+
+        #scanned-text {
+            word-wrap: break-word;
+            font-size: 16px;
+            margin-bottom: 15px;
+            direction: ltr;
+            text-align: left;
+        }
+
+        button, .button-link {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 1px solid #007bff;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .button-link {
+            background-color: #6c757d;
+            border-color: #6c757d;
         }
     </style>
 </head>
@@ -33,11 +59,19 @@
 <body>
     <h3 style="margin-bottom: 10px;">قم بمسح الـQR Code بالكاميرا</h3>
     <div style="display: flex; justify-content: center;">
-        <h6 style="margin: 10px 5px;">اختر الكاميرا:</h6>
+        <h6 for="cameraSelect" style="margin: 10px 5px;">اختر الكاميرا:</h6>
         <select id="cameraSelect" style="margin-bottom: 10px;"></select> <!-- Dropdown for camera selection -->
     </div>
-    <video id="scanner" style="height: 380px; object-fit: cover;"></video>
-    <a id="result2" style="direction: ltr;" href="#"></a>
+    <div id="scanner-container">
+        <video id="scanner" style="height: 380px; object-fit: cover;"></video>
+    </div>
+
+    <div id="result-container">
+        <h4>تم مسح الرمز بنجاح:</h4>
+        <p id="scanned-text"></p>
+        <button id="copy-button">نسخ الأرقام</button>
+        <a href="http://10.10.10.0" class="button-link">الرجوع إلى صفحة التسجيل</a>
+    </div>
     <script type="module">
         // استيراد مكتبة QrScanner من ملف خارجي لتشغيل وظائف مسح الـ QR
 
@@ -70,14 +104,12 @@
             qrScanner.stop();
 
             // عرض البيانات الممسوحة
-            scannedDataElem.textContent = result.data;
-            resultContainer.style.display = 'block';
+            const scannedTextElement = document.getElementById('scanned-text');
+            scannedTextElement.textContent = result.data;
 
-            // إخفاء الفيديو
-            video.style.display = 'none';
-
-            // وظيفة زر النسخ
-            copyBtn.onclick = () => {
+            // إضافة وظيفة لزر النسخ
+            document.getElementById('copy-button').addEventListener('click', () => {
+                // استخراج الأرقام فقط من النص
                 const numbers = result.data.match(/\d+/g)?.join('') || '';
                 if (numbers) {
                     navigator.clipboard.writeText(numbers).then(() => {
@@ -88,12 +120,7 @@
                 } else {
                     alert('لا توجد أرقام لنسخها');
                 }
-            };
-
-            // وظيفة زر الرجوع
-            backBtn.onclick = () => {
-                window.location.href = 'http://10.10.10.0';
-            };
+            });
         };
 
         // إعداد وتكوين الماسح الضوئي للـ QR
