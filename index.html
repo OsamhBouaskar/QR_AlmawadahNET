@@ -121,8 +121,14 @@
             },
             {
                 // إعدادات إضافية للماسح الضوئي
+                facingMode: 'environment', // استخدام الكاميرا الخلفية بشكل افتراضي
+                
                 highlightScanRegion: true,
+
                 highlightCodeOutline: true,
+                inversionMode: "both", // محاولة قراءة الأكواد العادية والمعكوسة الألوان
+                inversionAttempts: "attemptBoth"
+
             }
         );
 
