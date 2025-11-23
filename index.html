@@ -20,42 +20,12 @@
             border-radius: 10px;
         }
 
-        #result-container {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            display: none; /* إخفاء الحاوية مبدئياً */
-        }
-
-        #full-result {
-            font-size: 16px;
+        #result2 {
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 15px;
-            word-wrap: break-word;
-            direction: ltr;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 5px;
-            border: none;
-        }
-
-        #copy-btn {
-            background-color: #007bff;
-            color: white;
-        }
-
-        #back-btn {
-            background-color: #6c757d;
-            color: white;
+            color: #000;
+            display: block;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -67,14 +37,7 @@
         <select id="cameraSelect" style="margin-bottom: 10px;"></select> <!-- Dropdown for camera selection -->
     </div>
     <video id="scanner" style="height: 380px; object-fit: cover;"></video>
-
-    <!-- حاوية لعرض النتائج والأزرار -->
-    <div id="result-container">
-        <h4>تم مسح الرمز بنجاح:</h4>
-        <div id="full-result"></div>
-        <button id="copy-btn" class="btn">نسخ الأرقام</button>
-        <a id="back-btn" class="btn" href="http://10.10.10.0">الرجوع لصفحة التسجيل</a>
-    </div>
+    <a id="result2" style="direction: ltr;" href="#"></a>
     <script type="module">
         // استيراد مكتبة QrScanner من ملف خارجي لتشغيل وظائف مسح الـ QR
 
@@ -95,83 +58,81 @@
         }
         // console.log(sourcePage);
         // ربط المتغيرات مع عناصر HTML في الصفحة
-        const video = document.getElementById('scanner');
+        const video = document.getElementById('scanner'); // عنصر الفيديو الذي يعرض الكاميرا
         const resultContainer = document.getElementById('result-container');
-        const fullResultElem = document.getElementById('full-result');
+        const scannedDataElem = document.getElementById('scanned-data');
         const copyBtn = document.getElementById('copy-btn');
-        const cameraSelect = document.getElementById("cameraSelect");
+        const backBtn = document.getElementById('back-btn');
+
+        // هذه الدالة تعمل تلقائياً عند نجاح مسح أي QR كود
+        const onScanSuccess = result => {
+            // إيقاف الماسح الضوئي لمنع المسح المتكرر
+            qrScanner.stop();
+
+            // عرض البيانات الممسوحة
+            scannedDataElem.textContent = result.data;
+            resultContainer.style.display = 'block';
+
+            // إخفاء الفيديو
+            video.style.display = 'none';
+
+            // وظيفة زر النسخ
+            copyBtn.onclick = () => {
+                const numbers = result.data.match(/\d+/g)?.join('') || '';
+                if (numbers) {
+                    navigator.clipboard.writeText(numbers).then(() => {
+                        alert('تم نسخ الأرقام: ' + numbers);
+                    }, () => {
+                        alert('فشل النسخ');
+                    });
+                } else {
+                    alert('لا توجد أرقام لنسخها');
+                }
+            };
+
+            // وظيفة زر الرجوع
+            backBtn.onclick = () => {
+                window.location.href = 'http://10.10.10.0';
+            };
+        };
 
         // إعداد وتكوين الماسح الضوئي للـ QR
         const qrScanner = new QrScanner(
             video, // عرض الكاميرا في هذا العنصر
-            result => {
-                // هذه الدالة تعمل تلقائياً عند نجاح مسح أي QR كود
-                console.log('decoded qr code:', result);
-                qrScanner.stop();
+            onScanSuccess,
 
-                // إخفاء واجهة الكاميرا وعرض حاوية النتائج
-                video.style.display = 'none';
-                cameraSelect.style.display = 'none';
-                document.querySelector('h3').style.display = 'none';
-                document.querySelector('div > h6').style.display = 'none';
-                resultContainer.style.display = 'block';
-                
-                // عرض البيانات التي تم مسحها
-                fullResultElem.textContent = result.data;
-            },
             {
                 // إعدادات إضافية للماسح الضوئي
                 facingMode: 'environment', // استخدام الكاميرا الخلفية بشكل افتراضي
-                
-                highlightScanRegion: true,
-
-                highlightCodeOutline: true,
+                highlightScanRegion: true, // إظهار مربع حول منطقة المسح
+                highlightCodeOutline: true, // إظهار إطار حول الـ QR عند اكتشافه
                 inversionMode: "both", // محاولة قراءة الأكواد العادية والمعكوسة الألوان
                 inversionAttempts: "attemptBoth"
-
-            }
+            },
         );
 
         // --- كود التعامل مع اختيار الكاميرا ---
-        QrScanner.listCameras(true).then(cameras => {
-            cameras.forEach(camera => {
-                const option = document.createElement('option');
-                option.value = camera.id;
-                option.text = camera.label;
-                cameraSelect.add(option);
-            });
-            // محاولة اختيار الكاميرا الخلفية تلقائياً
-            const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
-            if (backCamera) {
-                cameraSelect.value = backCamera.id;
-                qrScanner.setCamera(backCamera.id);
+        let selectedCameraId = null;
+        const cameraSelect = document.getElementById("cameraSelect"); // عنصر القائمة المنسدلة للكاميرات
+        cameraSelect.innerHTML = ""; // تفريغ القائمة قبل إضافة الكاميرات
+        // جلب قائمة بجميع الكاميرات المتوفرة في الجهاز
+        const cameras = await QrScanner.listCameras(true);
+        // إضافة كل كاميرا كخيار في القائمة المنسدلة
+        cameras.forEach(camera => {
+            const option = document.createElement("option");
+            option.value = camera.id;
+            option.textContent = camera.label;
+            cameraSelect.appendChild(option);
+            // محاولة اختيار الكاميرا الخلفية تلقائياً عند بدء التشغيل
+            if (camera.label.toLowerCase().includes("camera2 0") || camera.label.toLowerCase().includes("back")) {
+                cameraSelect.value = camera.id;
+                qrScanner.setCamera(camera.id);
             }
         });
-
         // عند تغيير الكاميرا من القائمة، يتم تحديث الماسح الضوئي لاستخدام الكاميرا الجديدة
-        cameraSelect.addEventListener('change', event => {
-            qrScanner.setCamera(event.target.value);
-        });
-
-        // إضافة وظيفة لزر النسخ
-        copyBtn.addEventListener('click', () => {
-            const text = fullResultElem.textContent;
-            // استخراج الأرقام فقط من النص
-            const numbers = text.match(/\d+/g)?.join('') || '';
-
-            if (numbers) {
-                navigator.clipboard.writeText(numbers).then(() => {
-                    copyBtn.textContent = 'تم النسخ!';
-                    setTimeout(() => {
-                        copyBtn.textContent = 'نسخ الأرقام';
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Failed to copy numbers: ', err);
-                    alert('فشل نسخ الأرقام');
-                });
-            } else {
-                alert('لا توجد أرقام لنسخها');
-            }
+        cameraSelect.addEventListener("change", event => {
+            selectedCameraId = event.target.value;
+            qrScanner.setCamera(selectedCameraId);
         });
 
         // بدء تشغيل الماسح الضوئي والكاميرا
