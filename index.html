@@ -127,39 +127,14 @@
             }
         );
 
-        // --- كود التعامل مع اختيار الكاميرا ---
-        QrScanner.listCameras(true).then(cameras => {
-            cameras.forEach(camera => {
-                const option = document.createElement('option');
-                option.value = camera.id;
-                option.text = camera.label;
-                cameraSelect.add(option);
-            });
-            // محاولة اختيار الكاميرا الخلفية تلقائياً
-            const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
-            if (backCamera) {
-                cameraSelect.value = backCamera.id;
-                qrScanner.setCamera(backCamera.id);
-            }
-        });
-
-        // عند تغيير الكاميرا من القائمة، يتم تحديث الماسح الضوئي لاستخدام الكاميرا الجديدة
-        cameraSelect.addEventListener('change', event => {
-            qrScanner.setCamera(event.target.value);
-        });
-
         // إضافة وظيفة لزر النسخ
         copyBtn.addEventListener('click', () => {
             const text = fullResultElem.textContent;
-            // استخراج الأرقام فقط من النص
             const numbers = text.match(/\d+/g)?.join('') || '';
-
             if (numbers) {
                 navigator.clipboard.writeText(numbers).then(() => {
                     copyBtn.textContent = 'تم النسخ!';
-                    setTimeout(() => {
-                        copyBtn.textContent = 'نسخ الأرقام';
-                    }, 2000);
+                    setTimeout(() => { copyBtn.textContent = 'نسخ الأرقام'; }, 2000);
                 }).catch(err => {
                     console.error('Failed to copy numbers: ', err);
                     alert('فشل نسخ الأرقام');
@@ -169,8 +144,46 @@
             }
         });
 
-        // بدء تشغيل الماسح الضوئي والكاميرا
-        qrScanner.start(); 
+        // --- دالة رئيسية لتشغيل الماسح والكاميرا بالترتيب الصحيح ---
+        async function startScanner() {
+            try {
+                // 1. جلب قائمة الكاميرات
+                const cameras = await QrScanner.listCameras(true);
+                if (cameras.length === 0) {
+                    alert('لم يتم العثور على كاميرا.');
+                    return;
+                }
+
+                // 2. ملء القائمة المنسدلة وتحديد الكاميرا الخلفية
+                cameras.forEach(camera => {
+                    const option = document.createElement('option');
+                    option.value = camera.id;
+                    option.text = camera.label;
+                    cameraSelect.add(option);
+                });
+
+                const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
+                if (backCamera) {
+                    cameraSelect.value = backCamera.id;
+                    await qrScanner.setCamera(backCamera.id);
+                }
+
+                // 3. إضافة مستمع لتغيير الكاميرا
+                cameraSelect.addEventListener('change', event => {
+                    qrScanner.setCamera(event.target.value);
+                });
+
+                // 4. بدء تشغيل الماسح الضوئي **بعد** تجهيز الكاميرا
+                await qrScanner.start();
+
+            } catch (error) {
+                console.error(error);
+                alert('حدث خطأ أثناء تشغيل الكاميرا. يرجى التأكد من منح الإذن والمحاولة مرة أخرى.');
+            }
+        }
+
+        // --- بدء تنفيذ كل شيء ---
+        startScanner(); 
 
     </script>
 
