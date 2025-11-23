@@ -74,6 +74,7 @@
         <h4>تم مسح الرمز بنجاح:</h4>
         <div id="full-result"></div>
         <button id="copy-btn" class="btn">نسخ الأرقام</button>
+        <button id="rescan-btn" class="btn">مسح من جديد</button>
         <a id="back-btn" class="btn" href="http://10.10.10.0">الرجوع لصفحة التسجيل</a>
     </div>
     <script type="module">
@@ -95,6 +96,7 @@
         const resultContainer = document.getElementById('result-container');
         const fullResultElem = document.getElementById('full-result');
         const copyBtn = document.getElementById('copy-btn');
+        const rescanBtn = document.getElementById('rescan-btn');
         const cameraSelect = document.getElementById("cameraSelect");
 
         // إعداد وتكوين الماسح الضوئي للـ QR
@@ -109,9 +111,9 @@
                 video.style.display = 'none';
                 cameraSelect.style.display = 'none';
                 document.querySelector('h3').style.display = 'none';
-                document.querySelector('div > h6').style.display = 'none';
+                document.querySelector('h3').style.display = 'none';
                 resultContainer.style.display = 'block';
-                
+
                 // عرض البيانات التي تم مسحها
                 fullResultElem.textContent = result.data;
             },
@@ -137,6 +139,19 @@
             } else {
                 alert('لا توجد أرقام لنسخها');
             }
+        });
+
+        // --- دالة لإعادة تعيين الواجهة لوضع المسح ---
+        function resetScannerUI() {
+            video.style.display = 'block';
+            document.querySelector('h3').style.display = 'block';
+            resultContainer.style.display = 'none';
+        }
+
+        // --- وظيفة زر المسح من جديد ---
+        rescanBtn.addEventListener('click', () => {
+            resetScannerUI();
+            startScanner();
         });
 
         // --- دالة رئيسية لتشغيل الماسح والكاميرا بالترتيب الصحيح ---
@@ -170,7 +185,8 @@
         }
 
         // --- بدء تنفيذ كل شيء ---
-        startScanner(); 
+        resetScannerUI(); // التأكد من أن الواجهة في الحالة الأولية عند التحميل
+        startScanner();
 
     </script>
 
