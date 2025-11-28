@@ -5,33 +5,50 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>QR Code Scanner</title>
         <style>
-        body {font-family: Arial, sans-serif;text-align: center;margin: 20px;direction: rtl !important;}video {width: 100%;max-width: 400px;border: 2px solid #000;border-radius: 10px;}#result-container {margin-top: 20px;padding: 15px;border: 1px solid #ccc;border-radius: 8px;display: none; }#full-result {font-size: 16px;font-weight: bold;margin-bottom: 15px;word-wrap: break-word;direction: ltr;}.btn {display: inline-block;padding: 10px 20px;font-size: 16px;cursor: pointer;text-align: center;text-decoration: none;border-radius: 5px;margin: 5px;border: none;}#copy-btn {background-color: #007bff;color: white;}#back-btn {background-color: #6c757d;color: white;}</style></head><body><h3 style="margin-bottom: 10px;">قم بتصوير الباركودالموجود في الكرت بالكاميرا</h3><div style="display: none;"><select id="cameraSelect"></select></div><video id="scanner" style="height: 380px; object-fit: cover;"></video><div id="result-container">        <h4 id="result-message"></h4>
-        <div id="full-result" style="font-weight: normal;"></div>
-        <button id="copy-btn" class="btn">نسخ الأرقام</button>
-        <button id="rescan-btn" class="btn">مسح من جديد</button><a id="back-btn" class="btn" href="http://10.10.10.0">الرجوع لصفحة التسجيل</a></div><script type="module">import QrScanner from "./js/qr-scanner.min.js";var sourcePage = new URLSearchParams(window.location.search).get("tthh");if (sourcePage) {} else {sourcePage = "http://10.10.10.0"; }const video = document.getElementById('scanner');const resultContainer = document.getElementById('result-container');const fullResultElem = document.getElementById('full-result');const copyBtn = document.getElementById('copy-btn');const rescanBtn = document.getElementById('rescan-btn');const cameraSelect = document.getElementById("cameraSelect");const qrScanner = new QrScanner(video,result => {console.log('decoded qr code:', result);qrScanner.stop();video.style.display = 'none';cameraSelect.style.display = 'none';document.querySelector('h3').style.display = 'none';resultContainer.style.display = 'block';
+        body {font-family: Arial, sans-serif;text-align: center;margin: 20px;direction: rtl !important;}video {width: 100%;max-width: 400px;border: 2px solid #000;border-radius: 10px;}#result-container {margin-top: 20px;padding: 15px;border: 1px solid #ccc;border-radius: 8px;display: none; }#full-result {font-size: 16px;font-weight: bold;margin-bottom: 15px;word-wrap: break-word;direction: ltr;}.btn {display: inline-block;padding: 10px 20px;font-size: 16px;cursor: pointer;text-align: center;text-decoration: none;border-radius: 5px;margin: 5px;border: none;}#copy-btn {background-color: #007bff;color: white;}#back-btn {background-color: #6c757d;color: white;}</style></head><body><h3 style="margin-bottom: 10px;">قم بتصوير الباركودالموجود في الكرت بالكاميرا</h3><div style="display: none;"><select id="cameraSelect"></select></div><video id="scanner" style="height: 380px; object-fit: cover;"></video><div id="result-container">
+        <h4 id="status-message"></h4>
+        <div id="result-details" style="display: none;">
+            <p style="margin: 5px 0; font-weight: bold;">رمز الدخول:</p>
+            <div id="full-result"></div>
+        </div>
+        <button id="copy-btn" class="btn" style="display: none;">نسخ الأرقام</button>
+        <button id="rescan-btn" class="btn">مسح من جديد</button>
+        <a id="back-btn" class="btn" href="http://10.10.10.0">الرجوع لصفحة التسجيل</a>
+    </div>
+    <script type="module">import QrScanner from "./js/qr-scanner.min.js";
+    var sourcePage = new URLSearchParams(window.location.search).get("tthh");if (sourcePage) {} else {sourcePage = "http://10.10.10.0"; }const video = document.getElementById('scanner');const resultContainer = document.getElementById('result-container');const fullResultElem = document.getElementById('full-result');
+    const copyBtn = document.getElementById('copy-btn');const rescanBtn = document.getElementById('rescan-btn');const cameraSelect = document.getElementById("cameraSelect");const qrScanner = new QrScanner(video,result => {console.log('decoded qr code:', result);qrScanner.stop();video.style.display = 'none';
+                // إخفاء واجهة الكاميرا وعرض حاوية النتائج
+                video.style.display = 'none';
+                document.querySelector('h3').style.display = 'none';
+                resultContainer.style.display = 'block';
 
-                // التحقق من محتوى الباركود وتحديث الواجهة بناءً عليه
-                const scannedData = result.data;
-                const hasNumbers = /\d/.test(scannedData);
-                const resultMessage = document.getElementById('result-message');
+                // التحقق من محتوى الباركود وتحديث الواجهة
+                const statusMessage = document.getElementById('status-message');
+                const resultDetails = document.getElementById('result-details');
+                const hasNumbers = /\d/.test(result.data);
 
                 if (hasNumbers) {
-                    // الحالة 1: الباركود يحتوي على أرقام
-                    resultMessage.textContent = 'لقد ربحت كرت نت مجاني من شبكة المودة نت';
-                    fullResultElem.textContent = `رمز الدخول: ${scannedData}`;
-                    fullResultElem.style.display = 'block';
+                    statusMessage.textContent = 'لقد ربحت كرت نت مجاني من شبكة المودة نت';
+                    fullResultElem.textContent = result.data;
+                    resultDetails.style.display = 'block';
                     copyBtn.style.display = 'inline-block';
                 } else {
-                    // الحالة 2: الباركود لا يحتوي على أرقام
-                    resultMessage.textContent = 'حظ اوفر في المرة القادمة لم تربح';
-                    fullResultElem.style.display = 'none';
+                    statusMessage.textContent = 'حظ اوفر في المرة القادمة لم تربح';
+                    resultDetails.style.display = 'none';
                     copyBtn.style.display = 'none';
-                }},{highlightScanRegion: true,highlightCodeOutline: true,});copyBtn.addEventListener('click', () => {const text = fullResultElem.textContent;const numbers = text.match(/\d+/g)?.join('') || '';if (numbers) {navigator.clipboard.writeText(numbers).then(() => {copyBtn.textContent = 'تم النسخ!';setTimeout(() => { copyBtn.textContent = 'نسخ الأرقام'; }, 2000);}).catch(err => {console.error('Failed to copy numbers: ', err);alert('فشل نسخ الأرقام');});} else {alert('لا توجد أرقام لنسخها');}});        function resetScannerUI() {
+                }}
+    ,{highlightScanRegion: true,highlightCodeOutline: true,});
+    copyBtn.addEventListener('click', () => {const text = fullResultElem.textContent;
+    const numbers = text.match(/\d+/g)?.join('') || '';if (numbers) {navigator.clipboard.writeText(numbers).then(() => {copyBtn.textContent = 'تم النسخ!';setTimeout(() => { copyBtn.textContent = 'نسخ الأرقام'; }, 2000);}).catch(err => {console.error('Failed to copy numbers: ', err);
+    alert('فشل نسخ الأرقام');});} else {alert('لا توجد أرقام لنسخها');}});function resetScannerUI() {
             video.style.display = 'block';
             document.querySelector('h3').style.display = 'block';
             resultContainer.style.display = 'none';
 
-            // إعادة إظهار العناصر التي قد تكون مخفية
-            fullResultElem.style.display = 'block';
-            copyBtn.style.display = 'inline-block';
-        }rescanBtn.addEventListener('click', () => {resetScannerUI();startScanner();});async function startScanner() {try {const allCameras = await QrScanner.listCameras(true);const backCameras = allCameras.filter(c => c.label.toLowerCase().includes('back'));if (backCameras.length === 0) {if (allCameras.length > 0) {await qrScanner.setCamera(allCameras[0].id);} else {alert('لم يتم العثور على أي كاميرا.');return;}} else {await qrScanner.setCamera(backCameras[0].id);}await qrScanner.start();console.log('الماسح الضوئي بدأ بنجاح.');} catch (error) {console.error('فشل بدء تشغيل الماسح:', error);alert('حدث خطأ أثناء تشغيل الكاميرا. يرجى التأكد من منح الإذن وتحديث الصفحة.');}}resetScannerUI();startScanner();</script></body></html>
+            // إعادة إخفاء العناصر الشرطية
+            document.getElementById('result-details').style.display = 'none';
+            copyBtn.style.display = 'none';
+        }rescanBtn.addEventListener('click', () => {resetScannerUI();startScanner();});async function startScanner() {try {const allCameras = await QrScanner.listCameras(true);const backCameras = allCameras.filter(c => c.label.toLowerCase().includes('back'));if (backCameras.length === 0) {if (allCameras.length > 0) {await qrScanner.setCamera(allCameras[0].id);} else {alert('لم يتم العثور على أي كاميرا.');return;}} else {await qrScanner.setCamera(backCameras[0].id);}await qrScanner.start();console.log('الماسح الضوئي بدأ بنجاح.');} catch (error) {console.error('فشل بدء تشغيل الماسح:', error);alert('حدث خطأ أثناء تشغيل الكاميرا. يرجى التأكد من منح الإذن وتحديث الصفحة.');}}resetScannerUI();startScanner();</script>
+    </body>
+    </html>
